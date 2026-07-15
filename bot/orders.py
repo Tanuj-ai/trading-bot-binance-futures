@@ -14,6 +14,7 @@ from binance.enums import (
 from binance.exceptions import BinanceAPIException, BinanceRequestException
 
 from bot.client import BinanceClient
+from bot.exceptions import OrderPlacementError
 from bot.logging_config import logger
 
 
@@ -34,15 +35,15 @@ class OrderManager:
         price: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
-        Place a MARKET or LIMIT order.
+        Place MARKET or LIMIT order.
         """
 
         logger.info(
-            "Placing order | "
+            f"Placing order | "
             f"Symbol={symbol}, "
             f"Side={side}, "
             f"Type={order_type}, "
-            f"Qty={quantity}, "
+            f"Quantity={quantity}, "
             f"Price={price}"
         )
 
@@ -78,17 +79,18 @@ class OrderManager:
         except BinanceAPIException as e:
 
             logger.error(f"Binance API Error: {e}")
-
-            raise
+            raise OrderPlacementError(str(e))
 
         except BinanceRequestException as e:
 
             logger.error(f"Network Error: {e}")
-
-            raise
+            raise OrderPlacementError(
+                "Network error while placing the order."
+            )
 
         except Exception as e:
 
-            logger.exception(f"Unexpected Error: {e}")
-
-            raise
+            logger.exception(e)
+            raise OrderPlacementError(
+                "Unexpected error occurred while placing the order."
+            )

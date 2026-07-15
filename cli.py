@@ -1,7 +1,8 @@
 """
-CLI entry point for the Binance Futures Trading Bot.
+Command Line Interface for the Binance Futures Trading Bot.
 """
 
+from datetime import datetime
 from typing import Optional
 
 import typer
@@ -20,20 +21,24 @@ from bot.validators import (
     validate_symbol,
 )
 
-app = typer.Typer(help="Binance Futures Testnet Trading Bot")
+app = typer.Typer(
+    help="Binance Futures Testnet Trading Bot",
+    add_completion=False,
+)
 
 console = Console()
 
 
-@app.command()
+@app.callback(invoke_without_command=True)
 def trade(
-    symbol: str = typer.Option(..., help="Trading symbol (e.g. BTCUSDT)"),
+    ctx: typer.Context,
+    symbol: str = typer.Option(..., help="Trading symbol (Example: BTCUSDT)"),
     side: str = typer.Option(..., help="BUY or SELL"),
     order_type: str = typer.Option(..., help="MARKET or LIMIT"),
     quantity: float = typer.Option(..., help="Order quantity"),
     price: Optional[float] = typer.Option(
         None,
-        help="Price (required for LIMIT orders)"
+        help="Required only for LIMIT orders",
     ),
 ):
     """
@@ -41,7 +46,6 @@ def trade(
     """
 
     try:
-
         symbol = validate_symbol(symbol)
         side = validate_side(side)
         order_type = validate_order_type(order_type)
@@ -51,12 +55,11 @@ def trade(
         summary = Table(
             title="Order Summary",
             box=box.ROUNDED,
-            show_header=True,
             header_style="bold cyan",
         )
 
-        summary.add_column("Field")
-        summary.add_column("Value")
+        summary.add_column("Field", style="cyan", width=18)
+        summary.add_column("Value", style="green")
 
         summary.add_row("Symbol", symbol)
         summary.add_row("Side", side)
@@ -65,6 +68,7 @@ def trade(
         summary.add_row("Price", str(price) if price else "-")
 
         console.print(summary)
+        console.print()
 
         manager = OrderManager()
 
@@ -76,23 +80,21 @@ def trade(
             price=price,
         )
 
-        console.print()
-
         console.print(
             Panel.fit(
-                "[bold green]✓ Order Submitted Successfully[/bold green]"
+                "[bold green]✓ Order Submitted Successfully[/bold green]",
+                border_style="green",
             )
         )
 
         result = Table(
             title="Order Response",
             box=box.ROUNDED,
-            show_header=True,
             header_style="bold green",
         )
 
-        result.add_column("Field")
-        result.add_column("Value")
+        result.add_column("Field", style="cyan", width=18)
+        result.add_column("Value", style="yellow")
 
         fields = [
             "orderId",
@@ -110,19 +112,30 @@ def trade(
 
         console.print(result)
 
-    except TradingBotError as e:
+        console.print()
+
+        console.print(
+            f"[bold cyan]Timestamp:[/bold cyan] "
+            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+
+    except TradingBotError as error:
 
         console.print(
             Panel.fit(
-                f"[bold red]{e}[/bold red]"
+                str(error),
+                title="Error",
+                border_style="red",
             )
         )
 
-    except Exception as e:
+    except Exception as error:
 
         console.print(
             Panel.fit(
-                f"[bold red]Unexpected Error:[/bold red]\n{e}"
+                str(error),
+                title="Unexpected Error",
+                border_style="red",
             )
         )
 

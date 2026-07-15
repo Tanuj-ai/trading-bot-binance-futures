@@ -1,29 +1,34 @@
+"""
+Logging configuration for the Trading Bot.
+"""
+
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-# Log file name
 LOG_FILE = "trading_bot.log"
 
 
 def setup_logger() -> logging.Logger:
     """
-    Configure and return the application logger.
-    Logs are written both to the console and to a log file.
+    Configure application logger.
     """
 
     logger = logging.getLogger("TradingBot")
 
-    # Prevent duplicate handlers if called multiple times
     if logger.hasHandlers():
         return logger
 
     logger.setLevel(logging.INFO)
 
-    # Create log file if it doesn't exist
     Path(LOG_FILE).touch(exist_ok=True)
 
-    # File handler with rotation
+    formatter = logging.Formatter(
+        "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    # File logger
     file_handler = RotatingFileHandler(
         LOG_FILE,
         maxBytes=1_000_000,
@@ -31,16 +36,12 @@ def setup_logger() -> logging.Logger:
         encoding="utf-8",
     )
 
-    # Console handler
-    console_handler = logging.StreamHandler()
-
-    # Log format
-    formatter = logging.Formatter(
-        "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-
+    file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
+
+    # Console logger
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.WARNING)
     console_handler.setFormatter(formatter)
 
     logger.addHandler(file_handler)
@@ -49,5 +50,4 @@ def setup_logger() -> logging.Logger:
     return logger
 
 
-# Shared logger instance
 logger = setup_logger()

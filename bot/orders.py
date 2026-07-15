@@ -1,12 +1,14 @@
 """
-Order placement logic for Binance Futures Testnet.
+Order management for Binance Futures Testnet.
 """
 
+from typing import Any, Dict, Optional
+
 from binance.enums import (
+    FUTURE_ORDER_TYPE_LIMIT,
+    FUTURE_ORDER_TYPE_MARKET,
     SIDE_BUY,
     SIDE_SELL,
-    FUTURE_ORDER_TYPE_MARKET,
-    FUTURE_ORDER_TYPE_LIMIT,
     TIME_IN_FORCE_GTC,
 )
 from binance.exceptions import BinanceAPIException, BinanceRequestException
@@ -20,7 +22,7 @@ class OrderManager:
     Handles Binance Futures order placement.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.client = BinanceClient().get_client()
 
     def place_order(
@@ -29,29 +31,30 @@ class OrderManager:
         side: str,
         order_type: str,
         quantity: float,
-        price: float = None,
-    ):
+        price: Optional[float] = None,
+    ) -> Dict[str, Any]:
         """
         Place a MARKET or LIMIT order.
         """
 
         logger.info(
-            f"Request -> Symbol={symbol}, Side={side}, "
-            f"Type={order_type}, Qty={quantity}, Price={price}"
+            "Placing order | "
+            f"Symbol={symbol}, "
+            f"Side={side}, "
+            f"Type={order_type}, "
+            f"Qty={quantity}, "
+            f"Price={price}"
         )
 
-        try:
+        side_enum = SIDE_BUY if side == "BUY" else SIDE_SELL
 
-            if side == "BUY":
-                side = SIDE_BUY
-            else:
-                side = SIDE_SELL
+        try:
 
             if order_type == "MARKET":
 
                 response = self.client.futures_create_order(
                     symbol=symbol,
-                    side=side,
+                    side=side_enum,
                     type=FUTURE_ORDER_TYPE_MARKET,
                     quantity=quantity,
                 )
@@ -60,14 +63,15 @@ class OrderManager:
 
                 response = self.client.futures_create_order(
                     symbol=symbol,
-                    side=side,
+                    side=side_enum,
                     type=FUTURE_ORDER_TYPE_LIMIT,
                     quantity=quantity,
                     price=price,
                     timeInForce=TIME_IN_FORCE_GTC,
                 )
 
-            logger.info(f"Response -> {response}")
+            logger.info("Order placed successfully.")
+            logger.info(response)
 
             return response
 
